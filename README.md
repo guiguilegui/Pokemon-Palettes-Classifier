@@ -1,0 +1,1 @@
+This is a repository used in my Pokémon type classifier using their primary color.
