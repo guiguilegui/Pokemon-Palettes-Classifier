@@ -6,31 +6,40 @@ library(png)
 library(plotly)
 library(kknn)
 ##############Download generation 3 (Ruby Version) ##############
-setwd("C:\\Users\\Guillaume\\Documents\\Pokemon\\Pokemon 2\\Downloaded")
+setwd("C:\\Users\\Guillaume\\Documents\\Pokemon\\Pokemon 2\\Downloaded\\Gen 3")
 
-for(i in 252:386){
+for(i in 1:386){
 	ParsePage = htmlParse(paste0("http://bulbapedia.bulbagarden.net/wiki/File:Spr_3r_", sprintf("%03d", i), ".png"))
 	Img.Loc = xpathSApply(ParsePage, '//div[@class="fullImageLink"]//img', xmlGetAttr, 'src')
 	download.file(Img.Loc, dest = paste0(sprintf("%03d", i), ".png"), mode = 'wb')
 }
 
-###Compute the most used color for each Pokémon####
-ModeColorNew = character(135)
-ModeRNew = numeric(135)
-ModeGNew = numeric(135)
-ModeBNew = numeric(135)
 
-for(i in 252:386){
+###Compute the most used color for each Pokémon####
+ModeColorNew = character(386)
+ModeRNew = numeric(386)
+ModeGNew = numeric(386)
+ModeBNew = numeric(386)
+
+####Create function to compute the mode####
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+
+for(i in 1:386){
 	Img.Png = readPNG(paste0(sprintf("%03d", i), ".png"))
 
-	j = i-251
+	j = i
 
 	####Only use points that are not transparent, nor white, nor black (used as the contour of pokémons)####
 	Transparents = Img.Png[,,4] == 1
 	Blacks = (Img.Png[,,1] == 0 & Img.Png[,,2] == 0 & Img.Png[,,3] == 0)
 	Whites = (Img.Png[,,1] == 1 & Img.Png[,,2] == 1 & Img.Png[,,3] == 1)
-
-	Used.Points = Transparents & !(Blacks) & !(Whites)
+	AlmostBlacks3 = (Img.Png[,,1] == 16/255		&	Img.Png[,,2] == 16/255		&	Img.Png[,,3] == 16/255)	#Contour of Electabuzz, Eevee, Hitmonchan, etc.
+	
+	Used.Points = Transparents & !(Blacks) & !(Whites)& !(AlmostBlacks3)
 
 	ModeColorNew[j]  = Mode(
 		paste0(
@@ -49,7 +58,7 @@ for(i in 252:386){
 
 ####create database or most used colors in RGB####
 Df.Colors.Mode.RGB.New = merge(
-data.frame(id = 252:386,R = ModeRNew, G = ModeGNew, B = ModeBNew,color = ModeColorNew),
+data.frame(id = 1:386,R = ModeRNew, G = ModeGNew, B = ModeBNew,color = ModeColorNew),
 pokemon.db[,c("id","identifier","Type.I","Type.II")])
 
 
@@ -73,7 +82,7 @@ p=plot_ly(Df.Colors.Mode.RGB.New,
 )
 p
 ###Save as one html file(requires pandoc)###
-htmlwidgets::saveWidget(as.widget(p), "PokemonPrimaryColorGen3.html") 
+htmlwidgets::saveWidget(as.widget(p), "PokemonPrimaryColorAllGen3.html") 
 
 
 
